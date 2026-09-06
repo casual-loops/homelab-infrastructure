@@ -22,6 +22,7 @@ flowchart TB
     Monitoring[Monitoring and Observability]
     Storage[File and Backup Services]
     Apps[Private Applications]
+    Development[Development Workloads]
     Automation[Home Automation]
 
     Internet --> Clients
@@ -36,8 +37,11 @@ flowchart TB
     Hypervisor --> Monitoring
     Hypervisor --> Storage
     Hypervisor --> Apps
+    Hypervisor --> Development
     Hypervisor --> Automation
     Proxy --> Apps
+    Clients --> Storage
+    Clients --> Development
 ```
 
 This diagram intentionally shows functional domains rather than the complete live host and dependency map.
@@ -54,6 +58,8 @@ The virtualization management interface is treated as private administrative inf
 
 Dedicated storage services support internal file access and selected application recovery workflows.
 
+File services remain local to the home network. Host-level filtering limits service reachability to intended local and monitoring paths, while share access is constrained with dedicated service identities and explicit permissions.
+
 Authoritative source data and rebuildable application indexes are treated as separate recovery domains where practical. Public documentation avoids publishing exact dataset placement, mount relationships, backup target names, or physical storage topology.
 
 ### Monitoring and observability
@@ -61,6 +67,8 @@ Authoritative source data and rebuildable application indexes are treated as sep
 Checkmk provides infrastructure and service-state monitoring, while Prometheus and Grafana provide time-series metrics and visualization.
 
 Monitoring application health is validated independently of operating-system package state. The monitoring platforms themselves are also treated as managed infrastructure with backup and recovery requirements.
+
+Grafana is presented through centralized HTTPS, while Prometheus remains a backend service used through internal service-to-service connectivity rather than a normal client-facing listener.
 
 ### DNS and filtering
 
@@ -74,7 +82,9 @@ A dedicated unprivileged Linux workload hosts Nginx as the centralized reverse p
 
 A wildcard certificate is issued through ACME DNS challenge validation. Private key material and DNS-provider credentials remain isolated from backend applications and outside source control.
 
-Service migration is incremental so application routing and TLS behavior can be validated before broader adoption.
+Service migration was performed incrementally so application routing, trusted-proxy behavior, authentication, WebSocket connectivity, and direct-backend restrictions could be validated before broader adoption.
+
+Only workloads with a current publication requirement use the reverse proxy. Development applications remain outside centralized ingress while they are LAN-only.
 
 ### Secure remote access
 
@@ -82,10 +92,10 @@ A dedicated Linux workload provides Tailscale subnet routing for authenticated e
 
 The design separates remote network reachability from application presentation:
 
-* Tailscale provides authenticated private network access.
+* Tailscale provides authenticated private network access where remote access is required.
 * Nginx provides named HTTPS presentation for selected private applications.
 * Administrative services remain private and use explicit remote-access policy.
-* Backend-only services remain local unless a documented requirement changes.
+* Backend-only and LAN-only services remain local unless a documented requirement changes.
 
 The access policy follows a deny-by-default model. Validation includes both permitted and denied paths from an external network.
 
@@ -97,11 +107,15 @@ Home Assistant runs as a dedicated appliance-style workload with local and cloud
 
 Updates, backups, and application validation are handled according to the appliance model rather than generic Linux maintenance assumptions.
 
+Home Assistant is presented through centralized HTTPS and validates the expected reverse-proxy source before accepting forwarded client information.
+
 ### Development and private applications
 
-Development and private application workloads include database-backed services and internal tools.
+Development workloads include database-backed services and internal tools.
 
-User-facing applications can use the reverse proxy for trusted HTTPS while remote reachability remains controlled by the overlay network. Databases and other backend components remain private unless direct remote administration is explicitly required.
+The Software Asset Management application and personal knowledge and RAG application remain under development and are currently accessed only from the home LAN. They are not published through Nginx or Tailscale until a real publication or remote-access requirement exists.
+
+Databases and other backend components remain private unless direct remote administration is explicitly required.
 
 ### Personal knowledge and retrieval platform
 
@@ -126,7 +140,8 @@ The environment follows several recurring principles:
 7. **Keep source data independent of derived indexes.** Rebuildable search or retrieval state should not become the only copy of important information.
 8. **Centralize ingress deliberately.** Reverse proxy and certificate responsibilities are isolated from backend applications.
 9. **Separate remote access from application ingress.** Administrative reachability and HTTPS presentation are different responsibilities.
-10. **Validate denied paths.** Security controls are tested for both intended access and intended restriction.
+10. **Do not expand access without a requirement.** LAN-only development and backend services remain local until remote access or publication is actually needed.
+11. **Validate denied paths.** Security controls are tested for both intended access and intended restriction.
 
 ## Backup model
 
