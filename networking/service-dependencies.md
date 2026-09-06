@@ -43,9 +43,10 @@ A failure at any layer can produce a similar user symptom, such as "the site is 
 | Grafana | Monitoring VM, Docker, local DNS, reverse proxy, wildcard certificate, persistent Grafana data, Prometheus data source | DNS resolution, HTTPS response, authentication, dashboard access, data-source connectivity, direct-backend denial |
 | Prometheus | Monitoring VM, Docker, target network reachability, configuration file, internal container network | container health, active target health, query execution through internal service paths, absence of unnecessary host exposure |
 | NUT exporter | Monitoring VM Docker network, UPS/NUT source, Prometheus scrape configuration | Prometheus target reports `up` and returns expected metrics |
-| Samba file services | file-services container, smbd, storage path, permissions, network path | share listing, authenticated read/write, expected file persistence |
+| Samba file services | file-services container, smbd, host firewall, storage path, share permissions, local network path | LAN reachability, authenticated share access, expected file persistence, non-local denial |
 | Home Assistant backups | Home Assistant backup subsystem, Samba share, dedicated service account, file-services container | backup completes locally and externally, backup file exists on share |
-| PostgreSQL development database | Development VM, PostgreSQL service, local storage | service status, successful application database query, logical backup |
+| Development applications | development host, local network path, application runtime, database where applicable | application starts locally, LAN access only when needed, no premature publication |
+| PostgreSQL development database | Development VM, PostgreSQL service, local storage | service status, successful application database query, logical backup, absence of unnecessary remote exposure |
 
 ## Example: Checkmk through centralized ingress
 
@@ -171,6 +172,33 @@ Possible failure domains:
 * Prometheus is healthy but individual scrape targets are unhealthy
 * direct backend access is unintentionally reintroduced during container or firewall changes
 
+## Example: LAN-only Samba access
+
+```text
+LAN client
+    |
+    v
+Host firewall
+    |
+    v
+Samba
+    |
+    v
+Authenticated share
+```
+
+Possible failure domains:
+
+* the client is not using the local network path
+* the host firewall does not allow the intended local source
+* Samba is stopped or not listening
+* the requested share name is incorrect
+* the dedicated share credential is invalid
+* share permissions reject the operation
+* an unintended remote path is accidentally permitted
+
+The validated model permits intended local SMB access while denying non-approved remote access.
+
 ## Example: Home Assistant backup path
 
 ```text
@@ -193,23 +221,11 @@ Dedicated backup directory
 
 A successful Home Assistant backup should be validated at both the application layer and the storage layer.
 
-## Example: Monitoring stack
+## Development workloads
 
-```text
-Prometheus
-   |
-   +--> host / service targets
-   |
-   +--> NUT exporter
-   |
-   v
-Time-series data
-   |
-   v
-Grafana
-```
+Development applications are not treated as production web services simply because they may later become user-facing.
 
-Grafana can be available while Prometheus targets are unhealthy. Prometheus can be available while an individual exporter is down. These are separate validation domains.
+While under active development and used only from the home LAN, they remain outside centralized ingress and remote-access publication. Reverse proxy, DNS, and Tailscale access should be introduced only when an actual requirement exists.
 
 ## Operational use
 
@@ -217,12 +233,13 @@ When a service fails, use the dependency map to test from the outside inward:
 
 1. Can the client resolve the expected name?
 2. Can the client reach the expected network endpoint?
-3. Does the proxy or ingress layer respond?
+3. Does the proxy or ingress layer respond where one is intentionally used?
 4. Is the certificate valid for the requested hostname?
 5. Does the backend application respond directly where appropriate?
 6. Does the application trust and correctly process the ingress source where forwarded headers are used?
 7. Are dependent services healthy?
 8. Does the user workflow succeed end to end?
 9. Where direct backend access is intentionally restricted, does the denied path remain blocked?
+10. For LAN-only services, is the client using the local network path rather than an unintended overlay route?
 
 This approach reduces the tendency to restart the application before proving which layer is actually failing.
