@@ -40,8 +40,8 @@ A failure at any layer can produce a similar user symptom, such as "the site is 
 | Vaultwarden | local DNS, reverse proxy, TLS certificate, Docker service, persistent application data | DNS resolution, HTTPS response, container health, client sign-in and sync |
 | Home Assistant | VM health, local DNS, reverse proxy, wildcard certificate, trusted-proxy configuration, backend listener, integrations | DNS resolution, HTTPS response, WebSocket connectivity, authentication, UI access, integration availability, automation execution, backup access |
 | Pi-hole | container health, network path, upstream DNS | local resolution, upstream resolution, filtering behavior |
-| Grafana | Monitoring VM, Docker, network path, persistent Grafana data | HTTP response, dashboard access, data-source connectivity |
-| Prometheus | Monitoring VM, Docker, target network reachability, configuration file | HTTP response, active target health, query execution |
+| Grafana | Monitoring VM, Docker, local DNS, reverse proxy, wildcard certificate, persistent Grafana data, Prometheus data source | DNS resolution, HTTPS response, authentication, dashboard access, data-source connectivity, direct-backend denial |
+| Prometheus | Monitoring VM, Docker, target network reachability, configuration file, internal container network | container health, active target health, query execution through internal service paths, absence of unnecessary host exposure |
 | NUT exporter | Monitoring VM Docker network, UPS/NUT source, Prometheus scrape configuration | Prometheus target reports `up` and returns expected metrics |
 | Samba file services | file-services container, smbd, storage path, permissions, network path | share listing, authenticated read/write, expected file persistence |
 | Home Assistant backups | Home Assistant backup subsystem, Samba share, dedicated service account, file-services container | backup completes locally and externally, backup file exists on share |
@@ -138,6 +138,39 @@ Possible failure domains:
 
 Home Assistant requires application-side reverse-proxy preparation before DNS cutover. A successful migration validates both ordinary HTTP requests and the persistent WebSocket API used by the frontend.
 
+## Example: Grafana and Prometheus separation
+
+```text
+Client
+  |
+  v
+Local DNS
+  |
+  v
+Nginx reverse proxy
+  |
+  v
+Grafana
+  |
+  v
+Internal container network
+  |
+  v
+Prometheus
+```
+
+Grafana is the user-facing visualization layer and is presented through centralized HTTPS. Prometheus remains a backend metrics service and is consumed through the internal container network rather than through a normal client-facing host listener.
+
+Possible failure domains:
+
+* DNS does not resolve the Grafana service name to the proxy
+* Nginx cannot reach the Grafana backend
+* Grafana authentication fails
+* host-level filtering blocks the expected proxy path
+* Grafana cannot reach Prometheus on the internal container network
+* Prometheus is healthy but individual scrape targets are unhealthy
+* direct backend access is unintentionally reintroduced during container or firewall changes
+
 ## Example: Home Assistant backup path
 
 ```text
@@ -190,5 +223,6 @@ When a service fails, use the dependency map to test from the outside inward:
 6. Does the application trust and correctly process the ingress source where forwarded headers are used?
 7. Are dependent services healthy?
 8. Does the user workflow succeed end to end?
+9. Where direct backend access is intentionally restricted, does the denied path remain blocked?
 
 This approach reduces the tendency to restart the application before proving which layer is actually failing.
