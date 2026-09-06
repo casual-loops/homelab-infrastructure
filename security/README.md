@@ -28,6 +28,9 @@ Several architectural choices reduce attack surface:
 * backend application listeners kept private where practical
 * secure remote access through Tailscale rather than exposing administrative interfaces directly
 * removal of application-local TLS proxies and direct overlay membership when centralized infrastructure makes them unnecessary
+* separation of user-facing monitoring interfaces from backend metrics services
+* host-level filtering that limits backend application listeners to expected ingress sources where required
+* removal of unnecessary host-published service ports when container-network communication is sufficient
 
 See [`../networking/`](../networking/) for the networking architecture that supports these controls.
 
@@ -77,6 +80,16 @@ The gateway is monitored in Checkmk and included in the appropriate scheduled gu
 A future independent always-on infrastructure device could provide redundant subnet routing if remote-access availability becomes more important.
 
 See [`../networking/tailscale-remote-access.md`](../networking/tailscale-remote-access.md).
+
+## Monitoring service isolation
+
+Monitoring services are exposed according to role rather than because they share a host.
+
+Grafana is treated as a private user-facing application and is presented through the centralized HTTPS ingress path. Direct backend access is restricted so the reverse proxy remains the expected client-facing route.
+
+Prometheus is treated as backend infrastructure. Its normal relationship with Grafana uses the internal container network, so a host-published Prometheus web listener is not required for routine visualization workflows.
+
+This pattern reduces lateral exposure while preserving the service-to-service communication required by the monitoring stack.
 
 ## Service accounts
 
@@ -186,6 +199,7 @@ Current planned improvements include:
 * automated backup restore testing
 * reverse-proxy certificate renewal and reload automation validation
 * expanded service-health alerting
+* continue service-by-service exposure reduction and access-model validation
 * consider redundant subnet routing when independent infrastructure is available
 
 These items are also tracked in the project wiki roadmap.
