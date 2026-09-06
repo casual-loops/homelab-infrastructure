@@ -80,23 +80,23 @@ flowchart LR
         MON[Monitoring]
         PWM[Password management]
         HA[Home Assistant]
-        RAG[Personal knowledge services]
-        DEV[Other private web applications]
     end
 
     RP --> MON
     RP --> PWM
     RP --> HA
-    RP --> RAG
-    RP --> DEV
 
-    subgraph Backend[Local and backend-only services]
+    subgraph LocalOnly[Local and backend-only services]
+        DEV[Development applications]
+        RAG[Personal knowledge services]
         SMB[Samba or network storage]
         DB[Databases and internal backends]
         MET[Prometheus, exporters, and monitoring agents]
         DNSADM[Pi-hole administrative interface]
     end
 
+    LAN --> DEV
+    LAN --> RAG
     LAN --> SMB
     LAN --> DB
     LAN --> MET
@@ -116,9 +116,10 @@ The diagram is intentionally sanitized and does not expose the live environment'
 5. **Avoid unnecessary WAN exposure.** Certificate automation and remote access should not require opening inbound ports when safer alternatives exist.
 6. **Separate administrative access from application ingress.** Tailscale provides private remote reachability, while Nginx provides HTTPS application presentation where appropriate.
 7. **Keep backend-only services local.** Databases, monitoring collectors, exporters, and agents should not gain remote exposure without an explicit requirement.
-8. **Validate DNS separately from application health.** A service can be running while name resolution is broken, and the reverse can also be true.
-9. **Document dependencies.** DNS, remote access, reverse proxy, authentication, certificate state, and backend services are separate failure domains.
-10. **Inspect application proxy settings before DNS cutover.** Applications that validate forwarded headers or trusted proxy sources must be prepared before their hostname is repointed to centralized ingress.
+8. **Do not publish development workloads prematurely.** Development applications remain LAN-only until a real remote-access or publication requirement exists.
+9. **Validate DNS separately from application health.** A service can be running while name resolution is broken, and the reverse can also be true.
+10. **Document dependencies.** DNS, remote access, reverse proxy, authentication, certificate state, and backend services are separate failure domains.
+11. **Inspect application proxy settings before DNS cutover.** Applications that validate forwarded headers or trusted proxy sources must be prepared before their hostname is repointed to centralized ingress.
 
 ## Key components
 
@@ -138,11 +139,13 @@ See [`dns-and-split-dns.md`](dns-and-split-dns.md).
 
 A dedicated unprivileged Linux container hosts Nginx as the centralized ingress and TLS termination layer for selected internal services.
 
-The proxy uses a wildcard certificate issued through ACME DNS challenge validation. Service migrations are staged rather than moved all at once. Monitoring was used as the first production validation target, followed by password management and Home Assistant after their application-specific access requirements were validated.
+The proxy uses a wildcard certificate issued through ACME DNS challenge validation. Service migrations were staged and validated individually. Monitoring, password management, Home Assistant, and Grafana now use the centralized HTTPS pattern where appropriate.
 
 One application migration also removed an application-local TLS proxy after Nginx was proven as the sole client-facing HTTPS layer. This reduced duplicate proxying and certificate lifecycle responsibilities on the backend host.
 
-The reverse proxy is not the remote-administration gateway. Proxmox and SSH are intentionally excluded from the reverse-proxy publication model and use the overlay network for remote access.
+The reverse proxy is not the remote-administration gateway. Proxmox and SSH are intentionally excluded from the reverse-proxy publication model and use private administrative paths instead.
+
+Development applications that are not yet published remain outside the reverse-proxy path until a real access requirement exists.
 
 See [`reverse-proxy-pattern.md`](reverse-proxy-pattern.md).
 
@@ -160,11 +163,17 @@ See [`tailscale-remote-access.md`](tailscale-remote-access.md).
 
 ### Home Assistant trusted proxy
 
-Home Assistant is now served through the centralized Nginx HTTPS path. Its HTTP server is configured to trust the dedicated reverse proxy when processing forwarded client information.
+Home Assistant is served through the centralized Nginx HTTPS path. Its HTTP server is configured to trust the dedicated reverse proxy when processing forwarded client information.
 
 The migration required application-side proxy trust to be configured before the centralized path could operate reliably. Requests carrying forwarded client headers from an untrusted proxy are rejected by Home Assistant, so trusted-proxy configuration is treated as a prerequisite for future ingress changes rather than a post-cutover cleanup step.
 
 The canonical Home Assistant service name resolves to Nginx through split DNS, while the Home Assistant backend continues listening on its private application port. Public documentation preserves this architecture but omits the live hostname, address, and trusted-proxy ranges.
+
+### Local file services
+
+Samba file services remain LAN-only. Host-level firewalling permits only intended local management, SMB, and monitoring paths while denying unnecessary remote access.
+
+Share configuration uses dedicated identities and explicitly defined shares. Unused printer-sharing defaults were removed from the file server configuration during hardening.
 
 ## Access classes
 
@@ -172,11 +181,12 @@ Services are classified by access requirement rather than by implementation tech
 
 | Access class | Typical services | Intended path |
 |---|---|---|
-| Private administrative | Proxmox, SSH, development administration | Tailscale |
-| Private user-facing web | Monitoring, password management, Home Assistant, development applications, personal knowledge services | Tailscale plus Nginx where named HTTPS is useful |
+| Private administrative | Proxmox, selected remote administration | Tailscale where remote access is required |
+| Private user-facing web | Monitoring, password management, Home Assistant | Tailscale plus Nginx where named HTTPS is useful |
+| Local development | Software Asset Management development, personal knowledge and RAG development | LAN only until publication or remote access is required |
 | Local administrative web | DNS administration | LAN plus explicitly granted Tailscale access |
 | Backend infrastructure | PostgreSQL, Prometheus, exporters, monitoring agents | LAN only unless a specific remote requirement is documented |
-| Local data services | Samba and similar storage services | LAN by default, optional Tailscale access when justified |
+| Local data services | Samba and similar storage services | LAN only unless a separate remote-access requirement is approved |
 
 The Tailscale policy uses explicit Grants and a deny-by-default model rather than an unrestricted allow-all rule.
 
@@ -250,6 +260,23 @@ Home Assistant backend
 
 Home Assistant proxy validation is application-specific. Before DNS cutover, confirm the reverse proxy is present in Home Assistant's trusted-proxy configuration and that forwarded-header handling is enabled. After cutover, validate the normal web UI, WebSocket connectivity, authentication, integrations, dashboards, and native clients where applicable.
 
+### Local file access
+
+```text
+LAN client
+    |
+    v
+Host firewall
+    |
+    v
+Samba
+    |
+    v
+Authenticated share
+```
+
+The normal LAN path is validated positively, while non-approved remote paths remain denied.
+
 ## Operational validation
 
 Networking changes should be validated at more than one layer:
@@ -264,6 +291,7 @@ Networking changes should be validated at more than one layer:
 8. for remote-access changes, confirm the intended Tailscale route is available and unauthorized paths remain unavailable
 9. for native applications, test an actual client from an external network rather than relying only on browser or TCP tests
 10. for applications that process forwarded headers, confirm trusted-proxy configuration before changing DNS
+11. for LAN-only services, validate both the allowed local path and at least one denied non-local path
 
 The Tailscale deployment was validated from an external client network rather than from the home LAN. Positive tests confirmed access to intended administrative and HTTPS paths. Negative tests confirmed that selected LAN-only and non-approved paths remained unavailable through the overlay.
 
