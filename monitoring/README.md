@@ -80,11 +80,20 @@ Current validated telemetry includes:
 
 Prometheus is retained for historical analysis, rates, sustained thresholds, and capacity trends rather than duplicating Checkmk state monitoring.
 
+The Prometheus web service is treated as backend infrastructure. It is not published as a normal user-facing host service, and Grafana reaches it through the internal container network. This keeps the metrics API available to the visualization layer without providing unnecessary direct client access.
+
 A dedicated `prometheus/` directory should be introduced when Prometheus configuration, alert rules, or operational runbooks require their own documentation set.
 
 ## Grafana
 
 Grafana remains the primary visualization layer over Prometheus metrics.
+
+Grafana is presented through the centralized Nginx HTTPS path. The application uses an explicit external URL configuration, public self-registration is disabled, and host-level filtering limits direct backend access to the expected ingress path.
+
+The monitoring VM therefore separates the two co-hosted services by role:
+
+* Grafana is the private user-facing visualization application.
+* Prometheus remains backend-only and communicates with Grafana through the internal container network.
 
 Grafana availability is monitored independently through Checkmk because a healthy dashboard application does not prove the metrics collection path is healthy.
 
@@ -120,7 +129,7 @@ For the remote-access gateway, validation should include host health, Checkmk ag
 
 For database-backed application services, validation should distinguish guest health from database availability and user-facing application health.
 
-For Prometheus and Grafana, validation should distinguish metrics collection, exporter health, Prometheus target state, query behavior, and dashboard availability.
+For Prometheus and Grafana, validation should distinguish metrics collection, exporter health, Prometheus target state, query behavior, dashboard availability, reverse-proxy access, and direct-backend denial where that restriction is intentional.
 
 ## Operating principles
 
@@ -135,7 +144,8 @@ For Prometheus and Grafana, validation should distinguish metrics collection, ex
 9. Validate notification delivery end to end.
 10. Validate recovery behavior, not only failure detection.
 11. Keep monitoring infrastructure itself backed up, maintained, and tested.
-12. Keep secrets and live topology details out of the public repository.
+12. Keep backend monitoring interfaces private when direct user access is unnecessary.
+13. Keep secrets and live topology details out of the public repository.
 
 ## Related documentation
 
