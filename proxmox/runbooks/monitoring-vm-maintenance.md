@@ -27,7 +27,18 @@ A full maintenance cycle covers:
 3. QEMU Guest Agent validation
 4. monitoring container image refresh
 5. application health validation
-6. rollback cleanup
+6. access-path validation
+7. rollback cleanup
+
+## Access model
+
+The co-hosted monitoring services use different access models.
+
+Grafana is the private user-facing visualization service and is presented through the centralized reverse proxy and trusted HTTPS path. Direct client access to the backend listener is restricted at the host firewall so the expected ingress path remains authoritative.
+
+Prometheus is backend infrastructure. Grafana reaches Prometheus through the internal Docker network, so Prometheus does not require a normal host-published web listener for routine operation.
+
+This distinction should be preserved during Compose, firewall, and maintenance changes.
 
 ## Pre-maintenance checks
 
@@ -197,42 +208,47 @@ Expected services include:
 * Grafana OSS
 * Prometheus NUT Exporter
 
+After recreation, confirm that container publishing still matches the intended access model. A Compose change should not silently reintroduce a host-published Prometheus listener or broaden direct Grafana backend access.
+
 ## Application validation
 
 ### Grafana
 
-```bash
-curl -I http://localhost:3000
-```
+Validate Grafana through the normal named HTTPS path rather than relying only on the backend listener.
 
-An HTTP response such as `200 OK` or a redirect indicates the service is responding.
+Confirm:
+
+* the expected hostname resolves to the centralized reverse proxy
+* the trusted HTTPS path loads normally
+* authentication succeeds
+* existing dashboards render and contain data
+* Prometheus remains available as the configured data source
+* direct client access to the backend listener remains blocked where expected
 
 ### Prometheus
 
-```bash
-curl -I http://localhost:9090
-```
+Prometheus is consumed through the internal Docker network by Grafana and other intended monitoring components.
 
-An HTTP response confirms the web service is available.
+Validate container health and query behavior without requiring a host-published web listener. Examples include executing a query from an authorized container path or confirming healthy data-source access from Grafana.
 
 ### Exporter health through Prometheus
 
 A container port that is only exposed inside the Docker network may not be reachable through `localhost` on the host. Validate the exporter through Prometheus target health instead.
 
-Example:
+Expected validation should confirm that the exporter is functioning in the context that matters: Prometheus can scrape it successfully.
 
-```bash
-curl -s http://localhost:9090/api/v1/targets | \
-python3 -c 'import sys,json; d=json.load(sys.stdin); [print(t["scrapeUrl"], "=>", t["health"], t.get("lastError","")) for t in d["data"]["activeTargets"] if "9055" in t["scrapeUrl"]]'
-```
+## Host firewall validation
 
-Expected result includes:
+Review the host firewall after network or container changes.
 
-```text
-... => up
-```
+The intended policy should preserve:
 
-This verifies the exporter is functioning in the context that matters: Prometheus can scrape it successfully.
+* administrative access from approved management networks
+* Grafana backend access only from the expected reverse-proxy path
+* monitoring-agent access only from the expected monitoring source
+* no obsolete allowance for Prometheus when its host listener is not published
+
+Public documentation intentionally omits live addresses and exact rule numbering.
 
 ## Post-maintenance validation
 
@@ -241,13 +257,17 @@ Run final checks:
 ```bash
 sudo systemctl --failed
 sudo docker ps
+sudo ufw status
 ```
 
 Also confirm:
 
-* Grafana loads
-* Prometheus responds
+* Grafana loads through the centralized HTTPS path
+* direct Grafana backend access remains restricted
+* Grafana dashboards still contain current data
+* Prometheus remains reachable to Grafana through the internal container network
 * expected Prometheus targets are healthy
+* no unnecessary Prometheus host listener has been reintroduced
 * Proxmox guest-agent communication succeeds
 * Checkmk reports the expected final host and service states before downtime is removed
 
