@@ -32,6 +32,8 @@ Pi-hole therefore serves two distinct functions:
 
 This makes DNS a dependency for several internally hosted services even when those applications themselves are healthy.
 
+The Pi-hole workload relies on the virtualization platform for system time. Its application-level NTP synchronization is disabled because the container does not require permission to adjust the shared system clock. This removes recurring permission warnings without granting unnecessary time-setting capability to the DNS workload.
+
 ## Trusted HTTPS administration
 
 The DNS administration interface is accessed through a locally resolved service name over trusted HTTPS rather than plain HTTP.
