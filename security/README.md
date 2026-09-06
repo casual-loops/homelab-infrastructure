@@ -31,6 +31,8 @@ Several architectural choices reduce attack surface:
 * separation of user-facing monitoring interfaces from backend metrics services
 * host-level filtering that limits backend application listeners to expected ingress sources where required
 * removal of unnecessary host-published service ports when container-network communication is sufficient
+* LAN-only file services protected with host-level filtering
+* development applications kept unpublished until a concrete access requirement exists
 
 See [`../networking/`](../networking/) for the networking architecture that supports these controls.
 
@@ -53,7 +55,7 @@ The proxy itself is hardened as a core infrastructure workload:
 
 Backend migrations are staged so the old path is preserved until the new proxy path has been validated.
 
-One private application migration also removed the application-local TLS proxy after Nginx had been validated as the sole client-facing HTTPS layer. This reduced duplicate certificate handling and removed an unnecessary service from the application host.
+Selected private web applications now use the centralized ingress path. Development applications that are not yet published remain outside that path until a real requirement exists.
 
 ## Secure remote access
 
@@ -63,11 +65,11 @@ A dedicated unprivileged Linux container provides the subnet-router role. It run
 
 The implementation separates remote network access from application ingress:
 
-* Proxmox and selected SSH targets remain private and are reached through Tailscale
+* Proxmox and selected administrative targets remain private and are reached through Tailscale where remote access is required
 * selected private web applications use Nginx for trusted named HTTPS while Tailscale controls remote network reachability
 * internal DNS is available to remote clients only through the private overlay so split-DNS service names continue to work outside the LAN
 * DNS administration is explicitly reachable through a restricted Tailscale path
-* backend services such as PostgreSQL, Prometheus, exporters, and monitoring agents remain LAN-only unless a documented requirement changes
+* backend services such as PostgreSQL, Prometheus, exporters, monitoring agents, and file services remain local unless a documented requirement changes
 
 Tailscale Grants replace the default unrestricted allow-all rule. The current policy follows a deny-by-default approach with explicit approved paths.
 
@@ -85,11 +87,25 @@ See [`../networking/tailscale-remote-access.md`](../networking/tailscale-remote-
 
 Monitoring services are exposed according to role rather than because they share a host.
 
-Grafana is treated as a private user-facing application and is presented through the centralized HTTPS ingress path. Direct backend access is restricted so the reverse proxy remains the expected client-facing route.
+Grafana is treated as a private user-facing application and is presented through the centralized HTTPS ingress path. Direct backend access is restricted so the reverse proxy remains the expected client-facing route. Public self-registration is disabled.
 
 Prometheus is treated as backend infrastructure. Its normal relationship with Grafana uses the internal container network, so a host-published Prometheus web listener is not required for routine visualization workflows.
 
 This pattern reduces lateral exposure while preserving the service-to-service communication required by the monitoring stack.
+
+## File-service isolation
+
+Samba file services are kept LAN-only and protected with host-level firewalling.
+
+The file server exposes only explicitly configured shares using dedicated service identities. Unused printer-sharing defaults were removed, and the normal LAN access path was positively validated while an unintended remote path remained denied.
+
+This preserves local file and backup workflows without extending SMB reachability through the remote-access overlay.
+
+## Development workload isolation
+
+The Software Asset Management application and personal knowledge and RAG application remain under development and are not published through Nginx or Tailscale simply because those capabilities exist.
+
+Development is currently performed from the home LAN, so the workloads remain local until an actual remote-access or publication requirement is identified. PostgreSQL and other backend components remain private by default.
 
 ## Service accounts
 
@@ -199,7 +215,6 @@ Current planned improvements include:
 * automated backup restore testing
 * reverse-proxy certificate renewal and reload automation validation
 * expanded service-health alerting
-* continue service-by-service exposure reduction and access-model validation
 * consider redundant subnet routing when independent infrastructure is available
 
 These items are also tracked in the project wiki roadmap.
