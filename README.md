@@ -36,6 +36,8 @@ The following sections provide the main entry points into the homelab environmen
 * Tailscale overlay networking and subnet routing for secure remote administration
 * deny-by-default remote access policy with explicit service reachability
 * centralized private application ingress without direct application-host overlay membership where unnecessary
+* service-level access classification across proxy, LAN-only, backend-only, and remote-administration paths
+* host-level firewalling for selected local services
 * service dependency mapping and layered network troubleshooting
 * workload-specific backup and rollback design
 * SSH key-based administration and staged access hardening
@@ -85,6 +87,8 @@ flowchart TB
     Proxy --> Metrics
     Proxy --> HomeAutomation
     Clients --> FileServices
+    Clients --> Development
+    Clients --> Knowledge
 
     Clients --> RemoteAccess
     RemoteAccess --> Proxmox
@@ -110,9 +114,11 @@ A dedicated unprivileged Linux container hosts Nginx as the centralized ingress 
 
 The implementation uses a wildcard certificate issued through ACME DNS challenge validation. The private key is kept on the proxy rather than copied to every backend service, while DNS provider credentials remain outside source control.
 
-The infrastructure monitoring web interface was the first production migration behind the proxy. The same pattern has since been validated for another private application, including native-client access over the secure overlay and split DNS.
+The centralized ingress pattern is now validated across multiple private applications, including infrastructure monitoring, password management, Home Assistant, and Grafana.
 
 Where an application-local TLS proxy no longer provides a distinct benefit, it can be removed after the centralized Nginx path is proven. This reduces duplicate certificate and proxy configuration on backend hosts.
+
+Development applications are intentionally excluded from the proxy until they have an actual publication requirement.
 
 ### Secure remote administration
 
@@ -132,9 +138,25 @@ See [`networking/tailscale-remote-access.md`](networking/tailscale-remote-access
 
 ### Development and personal applications
 
-The development VM hosts a Software Asset Management application backed by PostgreSQL. It is treated as a private user-facing application and uses the secure overlay network for remote reachability, with Nginx available for named HTTPS access.
+The development VM hosts a Software Asset Management application backed by PostgreSQL. It remains under development and is accessed only from the home LAN.
 
-The personal knowledge and RAG backend remains a private-first application platform built around PostgreSQL, pgvector, Markdown ingestion, and a future FastAPI query service.
+The personal knowledge and RAG backend remains a private-first application platform built around PostgreSQL, pgvector, Markdown ingestion, and a future FastAPI query service. It also remains LAN-only while under active development.
+
+Neither development application is published through Nginx or Tailscale until a real remote-access or publication requirement exists.
+
+### Monitoring access separation
+
+Grafana is treated as the private user-facing visualization layer and is presented through centralized HTTPS.
+
+Prometheus remains backend-only for normal operation and communicates with Grafana through the internal container network rather than a client-facing host port.
+
+Direct Grafana backend access is restricted so the reverse proxy remains the expected client-facing path.
+
+### Local file services
+
+Samba file services remain LAN-only and are protected by host-level firewalling.
+
+Only explicitly configured shares remain active, and access is validated using the intended local network path. Unapproved remote SMB access remains blocked.
 
 ### Media services
 
@@ -175,7 +197,8 @@ A few principles recur throughout this environment:
 12. Separate remote administrative access from application ingress.
 13. Validate denied paths as well as permitted paths when testing access controls.
 14. Remove duplicate infrastructure roles from application hosts when centralized services already provide the capability.
-15. Keep public documentation useful to reviewers without exposing the live environment unnecessarily.
+15. Do not expand access paths until a real operational requirement exists.
+16. Keep public documentation useful to reviewers without exposing the live environment unnecessarily.
 
 ## Current technology areas
 
@@ -190,23 +213,24 @@ A few principles recur throughout this environment:
 | Network services | Pi-hole, split DNS, Samba, Nginx reverse proxy, TLS termination, Tailscale subnet routing |
 | PKI and certificates | ACME, DNS challenge validation, wildcard certificates, certificate lifecycle management |
 | Backup and recovery | guest backups, snapshots, application backups, network backup copies, logical database dumps |
-| Security | Service accounts, exposure reduction, SSH hardening, trusted proxies, Tailscale Grants, secrets handling, recovery controls |
+| Security | Service accounts, exposure reduction, host firewalling, SSH hardening, trusted proxies, Tailscale Grants, secrets handling, recovery controls |
 | Identity and secrets | Vaultwarden, dedicated service identities |
 | Home automation | Home Assistant OS, HACS, Zigbee, climate automation |
 | Operations | Change records, maintenance runbooks, full-environment playbooks, rollback planning, validation |
 
 ## Roadmap
 
-The dedicated reverse-proxy isolation milestone and initial secure remote-access deployment are implemented. Current follow-up work includes:
+The reverse-proxy isolation, initial secure remote-access deployment, and current service-by-service access review are implemented. Current follow-up work includes:
 
 * validate successful backup creation and controlled restore behavior for newer infrastructure workloads
 * automate wildcard certificate renewal and Nginx reload
 * add certificate-expiration monitoring
-* migrate additional private web applications through the proxy where appropriate
 * continue broader SSH hardening
 * improve independent backup resilience when additional hardware becomes practical
 * consider redundant subnet routing after independent always-on infrastructure is available
 * add further observability depth
+
+Future application publication will be evaluated when the development workloads are ready rather than treated as an outstanding infrastructure migration.
 
 See the [Wiki Roadmap](https://github.com/myles-portfolio/homelab-infrastructure/wiki/Roadmap) for the current priorities and planned work.
 
