@@ -8,15 +8,17 @@ Detailed topology, policy structure, addressing, device identities, authenticati
 
 ## Implemented capabilities
 
-The environment currently uses Tailscale to provide authenticated encrypted remote access to approved private homelab services without requiring inbound WAN port forwarding.
+The environment currently uses Tailscale to provide authenticated encrypted remote access to approved private homelab services and selected off-LAN administrative workloads without requiring inbound WAN port forwarding or public management listeners.
 
 Implemented capabilities include:
 
-* a dedicated Tailscale subnet-router workload
+* a dedicated Tailscale subnet-router workload for private homelab networks
+* direct Tailscale node membership for selected administrative workloads that sit outside the routed home network
 * private remote access to approved administrative services
 * remote access to selected private web applications
 * split-DNS support for internal service names
 * explicit access controls using a deny-by-default policy model
+* SSH reachability restricted by overlay policy while host-level key authentication remains independently enforced
 * separation of remote administration from centralized application ingress
 * external validation of both permitted and denied access paths
 * Checkmk monitoring of the remote-access gateway
@@ -30,6 +32,8 @@ Nginx provides centralized HTTPS termination and hostname-based routing for sele
 
 Administrative services that do not require web ingress remain available through the private overlay rather than being published through the reverse proxy.
 
+Private homelab targets are normally reached through the subnet router. Selected workloads outside that routed network may join the overlay directly when direct membership is the narrowest practical administrative path. Direct membership does not replace host authentication or justify public SSH exposure.
+
 ## Validation
 
 The implemented remote-access service has been validated from an external client network.
@@ -37,6 +41,7 @@ The implemented remote-access service has been validated from an external client
 Validation confirmed that:
 
 * approved administrative services are reachable remotely
+* selected direct-member administrative workloads are reachable only through the intended private path while host authentication remains required
 * approved private HTTPS services are reachable through the intended access path
 * internal DNS resolution works for remote clients
 * selected non-approved and backend-only paths remain unavailable
