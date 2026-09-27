@@ -33,7 +33,7 @@ The following sections provide the main entry points into the homelab environmen
 * Samba-based network storage and dedicated service accounts
 * DNS, split DNS, centralized Nginx reverse proxy, and wildcard TLS architecture
 * ACME DNS challenge validation without inbound HTTP exposure
-* Tailscale overlay networking and subnet routing for secure remote administration
+* Tailscale overlay networking with subnet routing and narrowly scoped direct node administration
 * deny-by-default remote access policy with explicit service reachability
 * centralized private application ingress without direct application-host overlay membership where unnecessary
 * service-level access classification across proxy, LAN-only, backend-only, and remote-administration paths
@@ -124,7 +124,7 @@ Development applications are intentionally excluded from the proxy until they ha
 
 Administrative remote access is separated from application ingress.
 
-Tailscale is deployed as the overlay VPN through a dedicated unprivileged Linux subnet-router container. Remote clients can reach approved private administrative services without publishing those interfaces through Nginx or opening inbound WAN ports.
+Tailscale is deployed as the overlay VPN through a dedicated unprivileged Linux subnet-router container. Remote clients can reach approved private administrative services without publishing those interfaces through Nginx or opening inbound WAN ports. Selected administrative workloads outside the routed home network may join the overlay directly when that is the narrower path.
 
 The remote-access policy uses explicit Grants with deny-by-default behavior. Validation from an external network confirmed approved administrative and HTTPS paths while selected backend and non-approved paths remained unavailable.
 
@@ -132,7 +132,7 @@ Split DNS allows remote clients to use the same private service names as LAN cli
 
 The gateway is monitored through Checkmk and included in the appropriate scheduled backup policy.
 
-Proxmox management is intentionally excluded from the reverse-proxy migration path. Remote administration uses Tailscale instead.
+Proxmox management is intentionally excluded from the reverse-proxy migration path. Remote administration uses Tailscale instead. Direct-member administrative workloads also retain host-level SSH key authentication and do not require public SSH exposure.
 
 See [`networking/tailscale-remote-access.md`](networking/tailscale-remote-access.md).
 
