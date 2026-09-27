@@ -21,6 +21,7 @@ Key networking functions include:
 - trusted-proxy handling in Home Assistant
 - no requirement for direct inbound WAN port forwarding for internally hosted web services documented here
 - Tailscale overlay networking through a dedicated subnet-router container for authenticated encrypted remote access
+- direct Tailscale membership for selected off-LAN administrative workloads where subnet routing is not applicable
 
 ## Logical flow
 
@@ -45,11 +46,12 @@ Trusted remote device
        |
        v
     Tailscale
-       |
-       v
-Dedicated subnet router
-       |
-       v
+      /   \
+     v     v
+Subnet    Direct-member
+router    admin workload
+  |
+  v
 Private homelab LAN
 ```
 
@@ -114,7 +116,7 @@ The diagram is intentionally sanitized and does not expose the live environment'
 3. **Use split DNS deliberately.** Internal clients can resolve a service name to the proxy path without requiring hairpin WAN routing.
 4. **Centralize TLS without distributing private keys broadly.** The wildcard certificate remains on the dedicated proxy rather than being copied to every backend.
 5. **Avoid unnecessary WAN exposure.** Certificate automation and remote access should not require opening inbound ports when safer alternatives exist.
-6. **Separate administrative access from application ingress.** Tailscale provides private remote reachability, while Nginx provides HTTPS application presentation where appropriate.
+6. **Separate administrative access from application ingress.** Tailscale provides private remote reachability through subnet routing or narrowly scoped direct membership, while Nginx provides HTTPS application presentation where appropriate.
 7. **Keep backend-only services local.** Databases, monitoring collectors, exporters, and agents should not gain remote exposure without an explicit requirement.
 8. **Do not publish development workloads prematurely.** Development applications remain LAN-only until a real remote-access or publication requirement exists.
 9. **Validate DNS separately from application health.** A service can be running while name resolution is broken, and the reverse can also be true.
@@ -157,6 +159,8 @@ The gateway advertises the required private network route to authenticated Tails
 
 The node acts as a subnet router, not as an exit node. Access is controlled with explicit Grants rather than unrestricted reachability across the advertised network.
 
+The subnet router remains the preferred path into the private homelab LAN. A workload outside that routed network can instead use direct Tailscale membership when there is a concrete administrative requirement. This pattern is used without adding a public SSH path, and host-level SSH key authentication remains mandatory.
+
 A future independent always-on device could provide redundant subnet routing if higher availability becomes necessary.
 
 See [`tailscale-remote-access.md`](tailscale-remote-access.md).
@@ -181,7 +185,7 @@ Services are classified by access requirement rather than by implementation tech
 
 | Access class | Typical services | Intended path |
 |---|---|---|
-| Private administrative | Proxmox, selected remote administration | Tailscale where remote access is required |
+| Private administrative | Proxmox, selected remote administration, off-LAN development administration | Tailscale through subnet routing or direct node membership where required |
 | Private user-facing web | Monitoring, password management, Home Assistant | Tailscale plus Nginx where named HTTPS is useful |
 | Local development | Software Asset Management development, personal knowledge and RAG development | LAN only until publication or remote access is required |
 | Local administrative web | DNS administration | LAN plus explicitly granted Tailscale access |
