@@ -27,6 +27,7 @@ Several architectural choices reduce attack surface:
 * avoidance of unnecessary inbound WAN port forwarding
 * backend application listeners kept private where practical
 * secure remote access through Tailscale rather than exposing administrative interfaces directly
+* direct overlay membership for selected off-LAN administrative workloads without public SSH exposure
 * removal of application-local TLS proxies and direct overlay membership when centralized infrastructure makes them unnecessary
 * separation of user-facing monitoring interfaces from backend metrics services
 * host-level filtering that limits backend application listeners to expected ingress sources where required
@@ -66,6 +67,7 @@ A dedicated unprivileged Linux container provides the subnet-router role. It run
 The implementation separates remote network access from application ingress:
 
 * Proxmox and selected administrative targets remain private and are reached through Tailscale where remote access is required
+* private homelab targets normally use subnet routing, while selected off-LAN administrative workloads may use direct node membership when the routed home network is not their natural path
 * selected private web applications use Nginx for trusted named HTTPS while Tailscale controls remote network reachability
 * internal DNS is available to remote clients only through the private overlay so split-DNS service names continue to work outside the LAN
 * DNS administration is explicitly reachable through a restricted Tailscale path
@@ -75,7 +77,7 @@ Tailscale Grants replace the default unrestricted allow-all rule. The current po
 
 Validation was performed from an external network and included both positive and negative tests. Intended administrative and HTTPS paths succeeded, while selected backend and non-approved paths remained unavailable through Tailscale.
 
-Private application hosts do not require direct Tailscale membership when their remote-access path is provided through the subnet router and reverse proxy. Direct node membership is removed where it no longer provides a distinct security or operational benefit.
+Private application hosts do not require direct Tailscale membership when their remote-access path is provided through the subnet router and reverse proxy. Direct node membership is removed where it no longer provides a distinct security or operational benefit. For an administrative workload outside the routed home network, direct membership can be appropriate when access is narrowly granted, public management exposure remains disabled, and host-level authentication is still required.
 
 The gateway is monitored in Checkmk and included in the appropriate scheduled guest backup policy.
 
@@ -105,7 +107,9 @@ This preserves local file and backup workflows without extending SMB reachabilit
 
 The Software Asset Management application and personal knowledge and RAG application remain under development and are not published through Nginx or Tailscale simply because those capabilities exist.
 
-Development is currently performed from the home LAN, so the workloads remain local until an actual remote-access or publication requirement is identified. PostgreSQL and other backend components remain private by default.
+The homelab-hosted development applications remain local until an actual remote-access or publication requirement is identified. PostgreSQL and other backend components remain private by default.
+
+A cloud-hosted development workstation is a separate administrative case rather than an application-publication exception. Its management path can use direct overlay membership and SSH key authentication without exposing SSH publicly or making the applications it supports remotely reachable.
 
 ## Service accounts
 
