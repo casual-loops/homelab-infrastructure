@@ -88,16 +88,16 @@ Only workloads with a current publication requirement use the reverse proxy. Dev
 
 ### Secure remote access
 
-A dedicated Linux workload provides Tailscale subnet routing for authenticated encrypted remote access.
+A dedicated Linux workload provides Tailscale subnet routing for authenticated encrypted remote access to private homelab networks. Selected administrative workloads outside those routed networks may use direct Tailscale membership instead.
 
 The design separates remote network reachability from application presentation:
 
-* Tailscale provides authenticated private network access where remote access is required.
+* Tailscale provides authenticated private network access where remote access is required, using subnet routing for private homelab networks and direct node membership only where a workload sits outside those routed networks.
 * Nginx provides named HTTPS presentation for selected private applications.
 * Administrative services remain private and use explicit remote-access policy.
 * Backend-only and LAN-only services remain local unless a documented requirement changes.
 
-The access policy follows a deny-by-default model. Validation includes both permitted and denied paths from an external network.
+The access policy follows a deny-by-default model. Validation includes both permitted and denied paths from an external network. Direct-member administrative workloads continue to enforce host-level authentication and do not require public SSH exposure.
 
 See [`../networking/tailscale-remote-access.md`](../networking/tailscale-remote-access.md).
 
@@ -116,6 +116,8 @@ Development workloads include database-backed services and internal tools.
 The Software Asset Management application and personal knowledge and RAG application remain under development and are currently accessed only from the home LAN. They are not published through Nginx or Tailscale until a real publication or remote-access requirement exists.
 
 Databases and other backend components remain private unless direct remote administration is explicitly required.
+
+Cloud-hosted development workstations are treated separately from application publication. When remote administration is required, they can use direct overlay membership with restricted reachability and SSH key authentication while application services remain unpublished.
 
 ### Personal knowledge and retrieval platform
 
