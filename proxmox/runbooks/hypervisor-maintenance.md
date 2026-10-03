@@ -156,7 +156,25 @@ Before confirming the transaction, review:
 
 Unexpected removal of core Proxmox packages such as `proxmox-ve`, `pve-manager`, `qemu-server`, `pve-container`, or required storage components is a stop condition.
 
-Package-news and service-restart prompts may appear during the upgrade. Review them and allow selected services to restart when appropriate.
+Package-news and service-restart prompts may appear during the upgrade. Review them carefully before continuing.
+
+On a Proxmox host, restarting PVE, LXC, networking, or related platform services can temporarily interrupt the web interface, DNS-dependent access paths, and guest availability even before the planned host reboot. Treat a `needrestart` service-selection prompt as a potentially disruptive maintenance action rather than a routine confirmation.
+
+Before accepting broad service restarts:
+
+* confirm Checkmk downtime is already active
+* retain a direct management path that does not depend on local DNS or the reverse proxy
+* expect browser and SSH sessions to drop temporarily
+* do not infer that the host rebooted solely because management access was interrupted
+
+After the package transaction, confirm whether a reboot actually occurred:
+
+```bash
+uptime -s
+uname -r
+```
+
+If the uptime predates the maintenance window and the running kernel is still the previous version, the host has not rebooted and the planned controlled reboot is still required.
 
 ## Pre-reboot validation
 
