@@ -291,6 +291,8 @@ docker compose config 2>&1 | grep WARN
 
 The warning check should return no interpolation warnings. After recreation, confirm the Vaultwarden log no longer reports a plain-text administrative token.
 
+If a complete reusable token or complete derived credential representation is exposed during troubleshooting, rotate it according to the repository security standard rather than treating hashing alone as sufficient protection.
+
 ## Guest network validation
 
 If `networking.service` times out while the application remains reachable over IPv4, inspect the guest and Proxmox network definitions before restarting services repeatedly.
