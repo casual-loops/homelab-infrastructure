@@ -17,7 +17,7 @@ The following sections provide the main entry points into the homelab environmen
 7. **Automation case study:** [`home-assistant/hvac/README.md`](home-assistant/hvac/README.md) documents a presence-aware HVAC control system built in Home Assistant.
 8. **Change management:** [`change-management/README.md`](change-management/README.md) describes the lightweight change-control framework used throughout the lab.
 9. **Detailed change examples:** [`change-management/examples/`](change-management/examples/) contains deeper records showing problem analysis, implementation, validation, rollback, and lessons learned.
-10. **Wiki:** [Homelab Infrastructure Wiki](https://github.com/myles-portfolio/homelab-infrastructure/wiki) contains the canonical sanitized change log, roadmap, and operational notes.
+10. **Wiki:** [Homelab Infrastructure Wiki](https://github.com/casual-loops/homelab-infrastructure/wiki) contains the canonical sanitized change log, roadmap, and operational notes.
 
 ## What this repository demonstrates
 
@@ -232,7 +232,7 @@ The reverse-proxy isolation, initial secure remote-access deployment, and curren
 
 Future application publication will be evaluated when the development workloads are ready rather than treated as an outstanding infrastructure migration.
 
-See the [Wiki Roadmap](https://github.com/myles-portfolio/homelab-infrastructure/wiki/Roadmap) for the current priorities and planned work.
+See the [Wiki Roadmap](https://github.com/casual-loops/homelab-infrastructure/wiki/Roadmap) for the current priorities and planned work.
 
 ## Security and sanitization
 
