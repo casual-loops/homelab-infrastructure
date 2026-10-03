@@ -71,6 +71,10 @@ Schedule downtime before the first reboot, shutdown, service restart, or other d
 
 Do not globally disable notifications. Hosts outside the maintenance scope should continue to alert normally.
 
+For large maintenance windows, use Checkmk's bulk host-selection workflow to schedule one consistent downtime across the affected host set rather than creating host-by-host entries. Include host services in the downtime scope.
+
+Before maintenance begins, preserve at least one management path that does not depend on the services being maintained. For example, if local DNS may be interrupted, retain direct hypervisor access by a trusted management address or console path. Do not publish the live address in the public repository.
+
 ## Phase 2: Establish the baseline
 
 Before making changes, capture the current state.
@@ -214,6 +218,8 @@ First confirm:
 * application-level checks pass
 * Checkmk has refreshed host and service states
 * no unexpected WARN, CRIT, UNKNOWN, or DOWN conditions remain
+
+If a host reports vanished services after a maintenance interruption, first verify network reachability and the Checkmk agent port, then force a fresh host check. Do not remove or rediscover services merely because the previous agent fetch failed. A transient `No route to host` condition can make existing services appear vanished until agent communication recovers.
 
 Then remove scheduled downtime early or allow the fixed downtime to expire.
 
