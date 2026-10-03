@@ -291,6 +291,16 @@ docker compose config 2>&1 | grep WARN
 
 The warning check should return no interpolation warnings. After recreation, confirm the Vaultwarden log no longer reports a plain-text administrative token.
 
+## Guest network validation
+
+If `networking.service` times out while the application remains reachable over IPv4, inspect the guest and Proxmox network definitions before restarting services repeatedly.
+
+A common pattern is an unnecessary DHCPv6 setting on a network that does not provide DHCPv6. Symptoms include repeated IPv6 solicitations followed by an interface bring-up timeout while the expected static IPv4 address remains active.
+
+Validate the configured address families and remove DHCPv6 from the Proxmox guest network definition when IPv6 addressing is not intentionally provided by DHCP. Retain normal IPv6 link-local behavior unless there is a separate reason to disable IPv6 entirely.
+
+Make the change at the Proxmox guest configuration layer when Proxmox owns the generated container network configuration, then reboot the container and confirm `systemctl --failed` is clean.
+
 ## Validation
 
 After recreation:
