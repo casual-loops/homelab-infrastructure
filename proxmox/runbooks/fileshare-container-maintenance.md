@@ -98,6 +98,14 @@ systemctl reload smbd
 systemctl status smbd --no-pager
 ```
 
+## Interactive client access
+
+Do not reuse dedicated backup or service identities as general workstation credentials. When one administrative workstation needs access to multiple SMB shares, use a separate human-facing Samba account and grant it only the required shares through `valid users`.
+
+Where each share already uses `force user` or `force group`, retain those mappings so filesystem ownership continues to use the dedicated service identity. This allows one authenticated client session without replacing the service-account ownership model.
+
+Windows normally maintains one SMB credential context per server identity. Map multiple shares from the same server using the same Samba account, and use distinct unused drive letters. Avoid placing passwords directly in command history; prompt for them interactively or use the operating system credential store.
+
 ## Backup-target validation
 
 When the container hosts backup storage for another service, validation must include an actual write from that service.

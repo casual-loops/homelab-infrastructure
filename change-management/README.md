@@ -110,5 +110,6 @@ Detailed examples include:
 * [Dedicated Nginx reverse proxy and wildcard TLS](examples/dedicated-nginx-reverse-proxy.md)
 * [Home Assistant rebuild](examples/home-assistant-rebuild.md)
 * [Monitoring VM maintenance](examples/monitoring-vm-maintenance.md)
+* [Full homelab maintenance, 2026-10-03](examples/full-homelab-maintenance-2026-10-03.md)
 
 The runbooks under `proxmox/runbooks/` demonstrate the same operating model in practice. They separate pre-checks, implementation, validation, cleanup, and rollback rather than treating a package-manager success message as proof of service health.

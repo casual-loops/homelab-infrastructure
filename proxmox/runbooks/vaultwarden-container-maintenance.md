@@ -90,6 +90,35 @@ sudo docker compose up -d
 
 The pull step downloads the current image defined by the Compose configuration. The `up -d` step recreates the service when the image has changed.
 
+## Compose secret interpolation safety
+
+Vaultwarden administrative tokens may be stored as Argon2 PHC strings containing literal `$` characters. When such a value is embedded directly in a Compose YAML file, Docker Compose can interpret portions of the hash as environment-variable references.
+
+Symptoms include warnings that names such as `argon2id`, `v`, or `m` are unset, followed by Vaultwarden reporting that the effective `ADMIN_TOKEN` is plain text.
+
+Do not paste the token into logs, tickets, chat, or public documentation. Back up the Compose file before editing it. When the PHC value is stored directly in Compose YAML, escape each literal dollar sign as `$$` so the container receives the intended single `$` characters.
+
+Validate the Compose model before recreating the service:
+
+```bash
+docker compose config -q
+docker compose config 2>&1 | grep WARN
+```
+
+The warning check should return no interpolation warnings. After recreation, confirm the Vaultwarden log no longer reports a plain-text administrative token.
+
+If a complete reusable token or complete derived credential representation is exposed during troubleshooting, rotate it according to the repository security standard rather than treating hashing alone as sufficient protection.
+
+## Guest network validation
+
+If `networking.service` times out while the application remains reachable over IPv4, inspect the guest and Proxmox network definitions before restarting services repeatedly.
+
+A common pattern is an unnecessary DHCPv6 setting on a network that does not provide DHCPv6. Symptoms include repeated IPv6 solicitations followed by an interface bring-up timeout while the expected static IPv4 address remains active.
+
+Validate the configured address families and remove DHCPv6 from the Proxmox guest network definition when IPv6 addressing is not intentionally provided by DHCP. Retain normal IPv6 link-local behavior unless there is a separate reason to disable IPv6 entirely.
+
+Make the change at the Proxmox guest configuration layer when Proxmox owns the generated container network configuration, then reboot the container and confirm `systemctl --failed` is clean.
+
 ## Validation
 
 After recreation:
