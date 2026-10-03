@@ -36,6 +36,12 @@ For multiple affected hosts, use a host view with checkboxes and apply the comma
 
 Active downtimes can be reviewed under `Monitor > Overview > Scheduled downtimes`.
 
+## Bulk scheduling
+
+For maintenance affecting several hosts, select the complete host set in the Checkmk monitoring view and schedule a single consistent downtime for the selected hosts and their services. This reduces omissions and keeps the maintenance window aligned across dependent systems.
+
+Do not disable notifications globally. Unaffected hosts should remain monitored normally.
+
 ## Scope rules
 
 ### Single guest maintenance
@@ -74,6 +80,17 @@ Choose a window that includes:
 * rollback time if validation fails
 
 If work completes early, the downtime may be removed after validation. Do not remove it simply because the package manager has finished.
+
+## Recovery after agent interruption
+
+A host that was temporarily unreachable can report vanished services because discovery received no agent data. Before changing discovery state:
+
+1. verify the target is reachable at the network layer
+2. verify the Checkmk agent transport is reachable
+3. force a fresh host check or allow the normal check cycle to run
+4. confirm services repopulate and the host returns to its expected state
+
+Do not remove vanished services or perform cleanup discovery solely in response to a transient communication failure such as `No route to host`.
 
 ## Completion criteria
 
