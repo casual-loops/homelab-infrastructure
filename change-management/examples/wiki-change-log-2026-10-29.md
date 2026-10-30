@@ -1,7 +1,5 @@
 # Wiki Change Log Entry: 2026-10-29
 
-Copy the following section into the GitHub Wiki Change Log page. Wiki edits are maintained separately from the repository.
-
 ## October 29, 2026
 
 **Completed full homelab patching and application recovery checks**
