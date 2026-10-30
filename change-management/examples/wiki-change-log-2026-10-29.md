@@ -29,4 +29,4 @@ Patched the Proxmox hypervisor, six active Linux containers, and four virtual ma
 
 **Outcome:** The planned maintenance and application-level checks passed, with no rollback required. Complete normal monitoring downtime and retained-backup housekeeping as applicable.
 
-[Detailed sanitized maintenance record](../blob/main/change-management/examples/full-homelab-maintenance-2026-10-29.md)
+[Detailed sanitized maintenance record](https://github.com/casual-loops/homelab-infrastructure/blob/main/change-management/examples/full-homelab-maintenance-2026-10-29.md)
