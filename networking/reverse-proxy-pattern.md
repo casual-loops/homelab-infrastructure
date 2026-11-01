@@ -157,8 +157,7 @@ If a proxy migration fails:
 
 The dedicated reverse proxy is operational and multiple private service patterns have been validated. Remaining work includes:
 
-* configure and test certificate renewal automation
-* reload Nginx automatically after successful certificate renewal
-* add certificate-expiration monitoring
+* continue monitoring the scheduled certificate renewal workflow and its Checkmk local check
+* review certificate-expiration alerts independently from renewal execution health
 * migrate additional private web applications where the pattern provides a clear benefit
 * continue validating application-specific proxy requirements before each migration
