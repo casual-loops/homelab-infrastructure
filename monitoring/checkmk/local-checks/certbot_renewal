@@ -1,0 +1,48 @@
+#!/bin/bash
+# Checkmk local check for a systemd-based Certbot renewal schedule.
+SERVICE="Certbot Renewal"
+UNIT="certbot-renew.service"
+TIMER="certbot-renew.timer"
+STATE_FILE="/var/lib/certbot-monitor/last-success"
+WARN=36
+CRIT=48
+
+emit() {
+    printf '%s "%s" %s %s\n' "$1" "$SERVICE" "$2" "$3"
+    exit 0
+}
+
+enabled=$(systemctl is-enabled "$TIMER" 2>/dev/null)
+active=$(systemctl is-active "$TIMER" 2>/dev/null)
+if [[ "$enabled" != "enabled" || "$active" != "active" ]]; then
+    emit 2 "-" "Renewal timer unavailable: enabled=$enabled, active=$active"
+fi
+
+result=$(systemctl show "$UNIT" -p Result --value)
+status=$(systemctl show "$UNIT" -p ExecMainStatus --value)
+if [[ "$result" == "exit-code" || "$result" == "signal" ||
+      "$result" == "timeout" || "$result" == "core-dump" ||
+      "$result" == "resources" ||
+      ( -n "$status" && "$status" != "0" ) ]]; then
+    emit 2 "-" "Last renewal execution failed: result=$result, exit=$status"
+fi
+
+if [[ ! -f "$STATE_FILE" ]]; then
+    emit 3 "-" "No persistent renewal execution record found"
+fi
+
+last=$(stat -c %Y "$STATE_FILE" 2>/dev/null)
+now=$(date +%s)
+if [[ ! "$last" =~ ^[0-9]+$ || "$last" -gt "$now" ]]; then
+    emit 3 "-" "Invalid renewal execution timestamp"
+fi
+
+age=$(( (now - last) / 3600 ))
+metric="renewal_age_hours=$age;$WARN;$CRIT"
+if (( age >= CRIT )); then
+    emit 2 "$metric" "Last successful renewal check ${age}h ago"
+elif (( age >= WARN )); then
+    emit 1 "$metric" "Last successful renewal check ${age}h ago"
+else
+    emit 0 "$metric" "Timer active, last check successful ${age}h ago"
+fi

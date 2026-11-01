@@ -149,7 +149,7 @@ The reverse proxy is not the remote-administration gateway. Proxmox and SSH are 
 
 Development applications that are not yet published remain outside the reverse-proxy path until a real access requirement exists.
 
-See [`reverse-proxy-pattern.md`](reverse-proxy-pattern.md).
+See [`reverse-proxy-pattern.md`](reverse-proxy-pattern.md) for ingress architecture and [`certbot-auto-renewal.md`](certbot-auto-renewal.md) for the completed ACME renewal and monitoring workflow.
 
 ### Tailscale subnet router
 
