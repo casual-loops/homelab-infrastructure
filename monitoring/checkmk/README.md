@@ -46,7 +46,7 @@ The migration was validated by forcing a client request to the reverse proxy bef
 
 The active DNS check was also updated to expect the proxy path. Troubleshooting identified a stale local host record that caused the resolver to return both the old backend address and the new proxy address. After removing the stale entry and reloading DNS, direct resolver tests, the underlying DNS monitoring plug-in, and the Checkmk active service all returned to the expected state.
 
-Certificate renewal automation on the dedicated proxy and certificate-expiration monitoring remain follow-up controls.
+Certificate renewal automation is operational on the dedicated proxy. Checkmk now monitors its scheduled execution using a local check, alongside independent HTTPS certificate-expiration monitoring. See [automated certificate renewal](../../networking/certbot-auto-renewal.md) and the [local check source](local-checks/certbot_renewal).
 
 ## Monitoring behavior after proxy migration
 
@@ -66,4 +66,4 @@ The Proxmox API special-agent integration remains disabled because of a compatib
 
 Scheduled downtime is part of the standard maintenance workflow for monitored infrastructure. Planned maintenance must suppress notifications only for the affected hosts while preserving normal alerting elsewhere.
 
-Current work is focused on observing notification quality, validating recovery and maintenance behavior, adding certificate-expiration monitoring, adding monitoring depth where it provides actionable operational evidence, and extending application-level checks as new services enter operation.
+Current work is focused on observing notification quality, validating recovery and maintenance behavior, refining certificate-expiration monitoring, adding actionable monitoring depth, and extending application-level checks as new services enter operation.
