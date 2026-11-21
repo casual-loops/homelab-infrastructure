@@ -6,7 +6,7 @@ This directory holds **curated, sanitized historical summaries** for a public po
 
 Raw source logs, guest configurations, Checkmk exports, incident details, backups and internal names must never be copied here. The private operator reviews evidence and publishes only an explicitly approved aggregate record.
 
-**Allowlisted public fields:** event identifier, local calendar date, maintenance category, outcome, counts of infrastructure classes, counts of recovered guests and monitored hosts, obsolete kernel removal count, observed storage-integrity error count, and strictly generic verification states.
+**Allowlisted public fields:** event identifier, local calendar date, maintenance category, outcome, counts of infrastructure classes, counts of recovered guests and monitored hosts, aggregate APT package-operation totals and transaction duration, obsolete kernel removal count, observed storage-integrity error count, and strictly generic verification states.
 
 **Excluded fields:** hostnames, guest IDs, addresses, internal URLs, credentials, ports, network paths and topology, detailed software version fingerprints, exact backup locations, vulnerability and security findings, logs, incident narratives and unsanitized free text.
 
@@ -15,6 +15,8 @@ Raw source logs, guest configurations, Checkmk exports, incident details, backup
 Files in `events/` contain one sanitized JSON object per maintenance event. All numeric fields represent **observed** counts, not extrapolated estimates. The monitoring-health metrics describe a point-in-time observation; they are not availability or uptime measurements.
 
 A value of `null` means not recorded or not independently verified. Never substitute zero for missing evidence.
+
+APT metrics count package **operations**, not unique packages or distinct security fixes. `apt_execution_duration_seconds` sums APT transaction runtimes across supported systems; it is **not elapsed wall-clock maintenance time** and could include concurrent activity. Retrospective collection uses an inclusive date range based on each system's local transaction date, which can include unrelated APT operations on those dates. Maintain transaction-level attribution in private records, not this public dataset. `apt_systems_collected` excludes appliances without APT.
 
 `outcome` describes maintenance work performed, while `administrative_closeout_verified` explicitly records whether downtime and other formal closeout tasks were separately checked.
 
