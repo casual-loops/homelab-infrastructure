@@ -26,6 +26,10 @@ A value of `null` means not recorded or not independently verified. Never substi
 4. Validate against the accompanying JSON Schema and review the final diff for inference and reconnaissance risks.
 5. Publish the sanitized record through a reviewed pull request, preferably after maintenance is fully concluded.
 
+## Private source collection
+
+A read-only [APT maintenance collector](../maintenance-collector/README.md) can gather private package-transaction evidence from the hypervisor and supported Linux guests. Its raw results must remain outside this public repository and require manual reconciliation before publishing allowlisted aggregates.
+
 ## Portfolio integration
 
 A frontend can read these static JSON records at build time for timeline charts, aggregate counters and optional abstract 3D illustrations. The public site must never query monitoring or management infrastructure directly. A 3D visualization should present abstract categories rather than the actual network topology.
