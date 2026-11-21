@@ -37,3 +37,8 @@ Thumbs.db
 # Editor metadata
 .vscode/
 .idea/
+
+# Private maintenance collector outputs (never commit raw guest reports)
+maintenance-private/
+**/maintenance-private/
+apt-*.json
