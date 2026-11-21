@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "id": "maintenance-2026-11-20",
+  "date": "2026-11-20",
+  "category": "scheduled-maintenance",
+  "outcome": "completed",
+  "systems": {
+    "total": 11,
+    "hypervisors": 1,
+    "virtual_machines": 4,
+    "containers": 6
+  },
+  "validation": {
+    "guests_expected": 10,
+    "guests_recovered": 10,
+    "monitored_hosts_observed": 12,
+    "monitored_hosts_up": 12,
+    "service_warnings": 0,
+    "service_unknown": 0,
+    "service_critical": 0,
+    "storage_integrity_errors": 0,
+    "scheduled_log_rotation_succeeded": true,
+    "administrative_closeout_verified": false
+  },
+  "maintenance": {
+    "obsolete_kernels_removed": 5,
+    "guest_backup_archives_observed": 10,
+    "restore_tests_verified": null,
+    "packages_upgraded": null,
+    "maintenance_duration_minutes": null
+  }
+}

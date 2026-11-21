@@ -104,7 +104,7 @@ Document outcome
 
 ## Examples in this repository
 
-Detailed examples include:
+Case studies and examples selected for interesting engineering decisions, troubleshooting, or lessons learned include:
 
 * [Split DNS and Vaultwarden HTTPS](examples/split-dns-vaultwarden-https.md)
 * [Dedicated Nginx reverse proxy and wildcard TLS](examples/dedicated-nginx-reverse-proxy.md)
@@ -115,3 +115,5 @@ Detailed examples include:
 * [Wiki Change Log entry prepared for 2026-10-29](examples/wiki-change-log-2026-10-29.md)
 
 The runbooks under `proxmox/runbooks/` demonstrate the same operating model in practice. They separate pre-checks, implementation, validation, cleanup, and rollback rather than treating a package-manager success message as proof of service health.
+
+Aggregated, public-safe event metrics for portfolio visualizations are documented in [Public Infrastructure Maintenance Metrics](../operations/public-metrics/README.md). They intentionally omit operational identities and sensitive details.
