@@ -104,7 +104,7 @@ Document outcome
 
 ## Examples in this repository
 
-Detailed examples include:
+Case studies and examples selected for interesting engineering decisions, troubleshooting, or lessons learned include:
 
 * [Split DNS and Vaultwarden HTTPS](examples/split-dns-vaultwarden-https.md)
 * [Dedicated Nginx reverse proxy and wildcard TLS](examples/dedicated-nginx-reverse-proxy.md)
@@ -112,7 +112,6 @@ Detailed examples include:
 * [Monitoring VM maintenance](examples/monitoring-vm-maintenance.md)
 * [Full homelab maintenance, 2026-10-03](examples/full-homelab-maintenance-2026-10-03.md)
 * [Full homelab maintenance, 2026-10-29](examples/full-homelab-maintenance-2026-10-29.md)
-* [Full homelab maintenance, 2026-11-20](examples/full-homelab-maintenance-2026-11-20.md)
 * [Wiki Change Log entry prepared for 2026-10-29](examples/wiki-change-log-2026-10-29.md)
 
 The runbooks under `proxmox/runbooks/` demonstrate the same operating model in practice. They separate pre-checks, implementation, validation, cleanup, and rollback rather than treating a package-manager success message as proof of service health.
