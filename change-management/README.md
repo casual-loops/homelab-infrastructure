@@ -112,6 +112,9 @@ Detailed examples include:
 * [Monitoring VM maintenance](examples/monitoring-vm-maintenance.md)
 * [Full homelab maintenance, 2026-10-03](examples/full-homelab-maintenance-2026-10-03.md)
 * [Full homelab maintenance, 2026-10-29](examples/full-homelab-maintenance-2026-10-29.md)
+* [Full homelab maintenance, 2026-11-20](examples/full-homelab-maintenance-2026-11-20.md)
 * [Wiki Change Log entry prepared for 2026-10-29](examples/wiki-change-log-2026-10-29.md)
 
 The runbooks under `proxmox/runbooks/` demonstrate the same operating model in practice. They separate pre-checks, implementation, validation, cleanup, and rollback rather than treating a package-manager success message as proof of service health.
+
+Aggregated, public-safe event metrics for portfolio visualizations are documented in [Public Infrastructure Maintenance Metrics](../operations/public-metrics/README.md). They intentionally omit operational identities and sensitive details.
