@@ -30,4 +30,4 @@ A value of `null` means not recorded or not independently verified. Never substi
 
 A frontend can read these static JSON records at build time for timeline charts, aggregate counters and optional abstract 3D illustrations. The public site must never query monitoring or management infrastructure directly. A 3D visualization should present abstract categories rather than the actual network topology.
 
-Related: [Sanitization policy](../../SECURITY.md) and [maintenance record](../../change-management/examples/full-homelab-maintenance-2026-11-20.md).
+Related: [Sanitization policy](../../SECURITY.md) and the canonical [Wiki Change Log](https://github.com/casual-loops/homelab-infrastructure/wiki/Change-Log). The dataset is a derived publishing artifact, not the change log itself.
