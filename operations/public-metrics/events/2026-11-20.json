@@ -26,7 +26,12 @@
     "obsolete_kernels_removed": 5,
     "guest_backup_archives_observed": 10,
     "restore_tests_verified": null,
-    "packages_upgraded": null,
-    "maintenance_duration_minutes": null
+    "packages_upgraded": 192,
+    "maintenance_duration_minutes": null,
+    "packages_installed": 18,
+    "packages_removed": 12,
+    "packages_purged": 7,
+    "apt_execution_duration_seconds": 784,
+    "apt_systems_collected": 10
   }
 }
